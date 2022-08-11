@@ -24,7 +24,6 @@ void ShadowBoost::SaveJSON()
 
 void ShadowBoost::Start()
 {
-	originalShadowDistance = gShadowDistance;
 	init = true;
 }
 
@@ -35,7 +34,7 @@ void ShadowBoost::UpdateShadows(float a_avgTiming)
 		float scaleRatio = (RateOfChange / (MaxDistance - MinDistance)) * (1.0f - timeRatio) + 1.0f;
 		gShadowDistance = std::clamp(gShadowDistance * scaleRatio, MinDistance, MaxDistance);
 	} else {
-		gShadowDistance = originalShadowDistance;
+		gShadowDistance = MaxDistance;
 	}
 	UpdateShadowDistance();
 }

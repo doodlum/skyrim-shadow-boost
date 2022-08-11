@@ -44,7 +44,6 @@ public:
 
 	bool  init = false;
 	int   frameCounter = 0;
-	float originalShadowDistance;
 	float currentDistance;
 	float lastCPUFrameTime;
 	float timingPerFrame[CPUTimingKeepNumFrames];
