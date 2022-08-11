@@ -1,0 +1,7 @@
+{
+ "Enabled": true,
+ "Distance Change Speed": 100.0,
+ "Maximum Distance": 10000.0,
+ "Minimum Distance": 1000.0,
+ "Target CPU Frametime (ms)": 10.0
+}
