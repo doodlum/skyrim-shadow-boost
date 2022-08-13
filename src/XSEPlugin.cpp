@@ -1,4 +1,3 @@
-#include "Events.h"
 #include "ShadowBoost.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
@@ -44,7 +43,6 @@ void Init()
 {
 	ShadowBoost::InstallHooks();
 	SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
-	Events::Register();
 }
 void InitializeLog()
 {
