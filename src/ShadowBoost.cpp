@@ -24,6 +24,7 @@ void ShadowBoost::SaveJSON()
 
 void ShadowBoost::Start()
 {
+	originalShadowDistance = gShadowDistance;
 	init = true;
 }
 
@@ -44,9 +45,7 @@ void ShadowBoost::UpdateSettings()
 	long long finish = PerformanceCounter();
 	double    elapsedMilliseconds = (double)((finish - frameEnd)) / PerformanceFrequency();
 	float     frameTime = (float)elapsedMilliseconds;
-	float     avgTiming;
-	if (HaveUpdatedAveragedTiming(frameTime, avgTiming))
-		UpdateShadows(frameTime);
+	UpdateShadows(frameTime);
 	lastCPUFrameTime = frameTime;
 }
 
@@ -57,26 +56,26 @@ void ShadowBoost::Update()
 	frameEnd = PerformanceCounter();
 }
 
-bool ShadowBoost::HaveUpdatedAveragedTiming(float a_frametime, float& a_avgTiming)
-{
-	frameCounter++;
-	bool badframe = frameCounter >= CPUTimingKeepNumFrames;
-	if (badframe) {
-		for (int i = CPUTimingKeepNumFrames - 1; i > 0; i--) {
-			timingPerFrame[i] = timingPerFrame[i - 1];
-		}
-	} else {
-		a_avgTiming = 0.0f;
-		for (int i = CPUTimingKeepNumFrames - 1; i > 0; i--) {
-			timingPerFrame[i] = timingPerFrame[i - 1];
-			a_avgTiming += timingPerFrame[i];
-		}
-		a_avgTiming += a_frametime;
-		a_avgTiming /= CPUTimingKeepNumFrames;
-	}
-	timingPerFrame[0] = a_frametime;
-	return badframe;
-}
+// bool ShadowBoost::HaveUpdatedAveragedTiming(float a_frametime, float& a_avgTiming)
+// {
+// 	frameCounter++;
+// 	bool badframe = frameCounter >= CPUTimingKeepNumFrames;
+// 	if (badframe) {
+// 		for (int i = CPUTimingKeepNumFrames - 1; i > 0; i--) {
+// 			timingPerFrame[i] = timingPerFrame[i - 1];
+// 		}
+// 	} else {
+// 		a_avgTiming = 0.0f;
+// 		for (int i = CPUTimingKeepNumFrames - 1; i > 0; i--) {
+// 			timingPerFrame[i] = timingPerFrame[i - 1];
+// 			a_avgTiming += timingPerFrame[i];
+// 		}
+// 		a_avgTiming += a_frametime;
+// 		a_avgTiming /= CPUTimingKeepNumFrames;
+// 	}
+// 	timingPerFrame[0] = a_frametime;
+// 	return badframe;
+// }
 
 void ShadowBoost::UISetMaxShadowDistance(const void* value, [[maybe_unused]] void* clientData)
 {
