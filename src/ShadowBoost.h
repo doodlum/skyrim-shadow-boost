@@ -6,7 +6,7 @@ using json = nlohmann::json;
 #include "API/ENBSeriesAPI.h"
 #include <shared_mutex>
 
-constexpr auto CPUTimingKeepNumFrames = 3;
+//constexpr auto CPUTimingKeepNumFrames = 3;
 
 /*static long&  gLastUpdatePerformanceCounterTick = (*(long*)RELOCATION_ID(524950, 411438).address());
 static float& gQueryPerformanceTickIntervalInMilliseconds = (*(float*)RELOCATION_ID(511886, 388446).address())*/;
@@ -43,10 +43,11 @@ public:
 	// Variables
 
 	bool  init = false;
-	int   frameCounter = 0;
+	//int   frameCounter = 0;
+	float originalShadowDistance;
 	float currentDistance;
 	float lastCPUFrameTime;
-	float timingPerFrame[CPUTimingKeepNumFrames];
+	//float timingPerFrame[CPUTimingKeepNumFrames];
 
 	void LoadJSON();
 	void SaveJSON();
@@ -59,7 +60,7 @@ public:
 
 	// Performance Queries
 
-	bool HaveUpdatedAveragedTiming(float a_frametime, float& a_avgTiming);
+	//bool HaveUpdatedAveragedTiming(float a_frametime, float& a_avgTiming);
 
 	static inline long long PerformanceCounter() noexcept
 	{
