@@ -29,13 +29,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:
 		ShadowBoost::GetSingleton()->Start();
 		break;
-	case SKSE::MessagingInterface::kNewGame:
-		ShadowBoost::GetSingleton()->LoadJSON();
-		break;
-
-	case SKSE::MessagingInterface::kPostLoadGame:
-		ShadowBoost::GetSingleton()->LoadJSON();
-		break;
 	}
 }
 
