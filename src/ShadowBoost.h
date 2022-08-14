@@ -9,9 +9,13 @@ using json = nlohmann::json;
 //constexpr auto CPUTimingKeepNumFrames = 3;
 
 /*static long&  gLastUpdatePerformanceCounterTick = (*(long*)RELOCATION_ID(524950, 411438).address());
-static float& gQueryPerformanceTickIntervalInMilliseconds = (*(float*)RELOCATION_ID(511886, 388446).address())*/;
+static float& gQueryPerformanceTickIntervalInMilliseconds = (*(float*)RELOCATION_ID(511886, 388446).address())*/
+;
 
-static float& gShadowDistance = (*(float*)RELOCATION_ID(513793, 391845).address());
+static float& fShadowDistance = (*(float*)RELOCATION_ID(513793, 391845).address());
+static float& fLODFadeOutMultObjects = (*(float*)RELOCATION_ID(500935, 358960).address());
+static float& fLODFadeOutMultItems = (*(float*)RELOCATION_ID(500933, 358957).address());
+static float& fLODFadeOutMultActors = (*(float*)RELOCATION_ID(500931, 358954).address());
 
 class ShadowBoost
 {
@@ -30,22 +34,34 @@ public:
 	ENB_API::ENBSDKALT1001* g_ENB = nullptr;
 	json                    JSONSettings;
 
+	// GameSettings
+
+	float& GetGameSettingFloat(std::string a_name, std::string a_section);
+
 	// Settings
 
-	bool  Enabled;
-	float TargetMS;
+	bool ShadowsEnabled;
+	bool LODEnabled;
+
 	float TargetFPS;
 	float RateOfChange;
-	float MaxDistance;
-	float MinDistance;
 
+	float fShadowDistanceMax;
+	float fShadowDistanceMin;
+
+	float fLODFadeOutMultObjectsMax;
+	float fLODFadeOutMultObjectsMin;
+
+	float fLODFadeOutMultItemsMax;
+	float fLODFadeOutMultItemsMin;
+
+	float fLODFadeOutMultActorsMax;
+	float fLODFadeOutMultActorsMin;
 
 	// Variables
 
-	bool  init = false;
+	bool init = false;
 	//int   frameCounter = 0;
-	float originalShadowDistance;
-	float currentDistance;
 	float lastCPUFrameTime;
 	//float timingPerFrame[CPUTimingKeepNumFrames];
 
@@ -56,7 +72,6 @@ public:
 	void UpdateShadows(float a_avgTiming);
 	void UpdateSettings();
 	void Update();
-
 
 	// Performance Queries
 
@@ -93,11 +108,31 @@ public:
 
 	// ENB UI
 
-	static void UISetMaxShadowDistance(const void* value, [[maybe_unused]] void* clientData);
-	static void UIGetMaxShadowDistance(void* value, [[maybe_unused]] void* clientData);
+#define UI_SETTER_GETTER_DISTANCE(maxparam, minparam)                                                \
+	static void UISet##maxparam(const void* value, [[maybe_unused]] void* clientData)                \
+	{                                                                                                \
+		GetSingleton()->maxparam = max(GetSingleton()->minparam, *static_cast<const float*>(value)); \
+	};                                                                                               \
+	static void UIGet##maxparam(void* value, [[maybe_unused]] void* clientData)                      \
+	{                                                                                                \
+		*static_cast<float*>(value) = GetSingleton()->maxparam;                                      \
+	}                                                                                                \
+	static void UISet##minparam(const void* value, [[maybe_unused]] void* clientData)                \
+	{                                                                                                \
+		GetSingleton()->minparam = min(GetSingleton()->maxparam, *static_cast<const float*>(value)); \
+	}                                                                                                \
+	static void UIGet##minparam(void* value, [[maybe_unused]] void* clientData)                      \
+	{                                                                                                \
+		*static_cast<float*>(value) = GetSingleton()->minparam;                                      \
+	}
 
-	static void UISetMinShadowDistance(const void* value, [[maybe_unused]] void* clientData);
-	static void UIGetMinShadowDistance(void* value, [[maybe_unused]] void* clientData);
+	UI_SETTER_GETTER_DISTANCE(fShadowDistanceMax, fShadowDistanceMin)
+
+	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultObjectsMax, fLODFadeOutMultObjectsMin)
+	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultItemsMax, fLODFadeOutMultItemsMin)
+	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultActorsMax, fLODFadeOutMultActorsMin)
+
+#undef UI_SETTER_GETTER_DISTANCE
 
 	void UpdateUI();
 
@@ -134,7 +169,8 @@ protected:
 	};
 
 private:
-	ShadowBoost(){
+	ShadowBoost()
+	{
 		LoadJSON();
 	};
 

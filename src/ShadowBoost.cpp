@@ -1,43 +1,83 @@
 #include "ShadowBoost.h"
 
+float& ShadowBoost::GetGameSettingFloat(std::string a_name, std::string a_section)
+{
+	auto ini = RE::INISettingCollection::GetSingleton();
+	return ini->GetSetting(std::format("{}:{}", a_name, a_section))->data.f;
+}
+
 void ShadowBoost::LoadJSON()
 {
 	std::ifstream i(L"Data\\SKSE\\Plugins\\ShadowBoost.json");
 	i >> JSONSettings;
-	Enabled = JSONSettings["Enabled"];
-	TargetMS = JSONSettings["Target CPU Frametime (ms)"];
+	ShadowsEnabled = JSONSettings["Shadows Enabled"];
+	LODEnabled = JSONSettings["LOD Enabled"];
+
+	TargetFPS = JSONSettings["Target FPS"];
 	RateOfChange = JSONSettings["Distance Change Speed"];
-	MaxDistance = JSONSettings["Maximum Distance"];
-	MinDistance = JSONSettings["Minimum Distance"];
+
+	fShadowDistanceMax = JSONSettings["fShadowDistanceMax"];
+	fShadowDistanceMin = JSONSettings["fShadowDistanceMin"];
+
+	fLODFadeOutMultObjectsMax = JSONSettings["fLODFadeOutMultObjectsMax"];
+	fLODFadeOutMultObjectsMin = JSONSettings["fLODFadeOutMultObjectsMin"];
+
+	fLODFadeOutMultItemsMax = JSONSettings["fLODFadeOutMultItemsMax"];
+	fLODFadeOutMultItemsMin = JSONSettings["fLODFadeOutMultItemsMin"];
+
+	fLODFadeOutMultActorsMax = JSONSettings["fLODFadeOutMultActorsMax"];
+	fLODFadeOutMultActorsMin = JSONSettings["fLODFadeOutMultActorsMin"];
 }
 
 void ShadowBoost::SaveJSON()
 {
 	std::ofstream o(L"Data\\SKSE\\Plugins\\ShadowBoost.json");
-	JSONSettings["Enabled"] = Enabled;
-	JSONSettings["Target CPU Frametime (ms)"] = TargetMS;
+	JSONSettings["Shadows Enabled"] = ShadowsEnabled;
+	JSONSettings["LOD Enabled"] = LODEnabled;
+
+	JSONSettings["Target FPS"] = TargetFPS;
 	JSONSettings["Distance Change Speed"] = RateOfChange;
-	JSONSettings["Maximum Distance"] = MaxDistance;
-	JSONSettings["Minimum Distance"] = MinDistance;
+
+	JSONSettings["fShadowDistanceMax"] = fShadowDistanceMax;
+	JSONSettings["fShadowDistanceMin"] = fShadowDistanceMin;
+
+	JSONSettings["fLODFadeOutMultObjectsMax"] = fLODFadeOutMultObjectsMax;
+	JSONSettings["fLODFadeOutMultObjectsMin"] = fLODFadeOutMultObjectsMin;
+
+	JSONSettings["fLODFadeOutMultItemsMax"] = fLODFadeOutMultItemsMax;
+	JSONSettings["fLODFadeOutMultItemsMin"] = fLODFadeOutMultItemsMin;
+
+	JSONSettings["fLODFadeOutMultActorsMax"] = fLODFadeOutMultActorsMax;
+	JSONSettings["fLODFadeOutMultActorsMin"] = fLODFadeOutMultActorsMin;
+
 	o << JSONSettings.dump(1);
 }
 
 void ShadowBoost::Start()
 {
-	originalShadowDistance = gShadowDistance;
 	init = true;
 }
 
 void ShadowBoost::UpdateShadows(float a_avgTiming)
 {
-	if (Enabled) {
-		float timeRatio = a_avgTiming / (TargetMS / 1000);
-		float scaleRatio = (RateOfChange / (MaxDistance - MinDistance)) * (1.0f - timeRatio) + 1.0f;
-		gShadowDistance = std::clamp(gShadowDistance * scaleRatio, MinDistance, MaxDistance);
-	} else {
-		gShadowDistance = MaxDistance;
-	}
+	float timeRatio = a_avgTiming / (1 / TargetFPS);
+	float scaleRatio = (RateOfChange / 100) * (1.0f - timeRatio) + 1.0f;
+
+	if (ShadowsEnabled)
+		fShadowDistance = std::clamp(fShadowDistance * scaleRatio, fShadowDistanceMin, fShadowDistanceMax);
+	else
+		fShadowDistance = fShadowDistanceMax;
 	UpdateShadowDistance();
+
+	if (LODEnabled) {
+		fLODFadeOutMultObjects = std::clamp(fLODFadeOutMultObjects * scaleRatio, fLODFadeOutMultObjectsMin, fLODFadeOutMultObjectsMax);
+		fLODFadeOutMultItems = std::clamp(fLODFadeOutMultItems * scaleRatio, fLODFadeOutMultItemsMin, fLODFadeOutMultItemsMax);
+		fLODFadeOutMultActors = std::clamp(fLODFadeOutMultActors * scaleRatio, fLODFadeOutMultActorsMin, fLODFadeOutMultActorsMax);
+	} else {
+		fLODFadeOutMultObjects = fLODFadeOutMultObjectsMax;
+		fLODFadeOutMultItems = fLODFadeOutMultItemsMax;
+		fLODFadeOutMultActors = fLODFadeOutMultItemsMin;
+	}
 }
 
 void ShadowBoost::UpdateSettings()
@@ -77,34 +117,35 @@ void ShadowBoost::Update()
 // 	return badframe;
 // }
 
-void ShadowBoost::UISetMaxShadowDistance(const void* value, [[maybe_unused]] void* clientData)
-{
-	GetSingleton()->MaxDistance = max(GetSingleton()->MinDistance, *static_cast<const float*>(value));
-}
+#define UI_ADD_MINMAXDISTANCE(maxparam, minparam)                                                                                                        \
+	g_ENB->TwAddVarCB(bar, #maxparam, ETwType::TW_TYPE_FLOAT, UISet##maxparam, UIGet##maxparam, this, "group=MOD:ShadowBoost min=1.00 max=1000000.0"); \
+	g_ENB->TwAddVarCB(bar, #minparam, ETwType::TW_TYPE_FLOAT, UISet##minparam, UIGet##minparam, this, "group=MOD:ShadowBoost min=1.00 max=1000000.0");
 
-void ShadowBoost::UIGetMaxShadowDistance(void* value, [[maybe_unused]] void* clientData)
-{
-	*static_cast<float*>(value) = GetSingleton()->MaxDistance;
-}
-
-void ShadowBoost::UISetMinShadowDistance(const void* value, [[maybe_unused]] void* clientData)
-{
-	GetSingleton()->MinDistance = min(*static_cast<const float*>(value), GetSingleton()->MaxDistance);
-}
-
-void ShadowBoost::UIGetMinShadowDistance(void* value, [[maybe_unused]] void* clientData)
-{
-	*static_cast<float*>(value) = GetSingleton()->MinDistance;
-}
+#define UI_ADD_CURRENTDISTANCE(param) \
+	g_ENB->TwAddVarRW(bar, #param, ETwType::TW_TYPE_FLOAT, &param, "group=MOD:ShadowBoost readonly=true");
 
 void ShadowBoost::UpdateUI()
 {
 	auto bar = g_ENB->TwGetBarByEnum(ENB_API::ENBWindowType::GeneralWindow);
-	g_ENB->TwAddVarRW(bar, "Enabled", ETwType::TW_TYPE_BOOLCPP, &Enabled, "group=MOD:ShadowBoost");
-	g_ENB->TwAddVarRW(bar, "Target CPU Frametime (ms)", ETwType::TW_TYPE_FLOAT, &TargetMS, "group=MOD:ShadowBoost");
+	g_ENB->TwAddVarRW(bar, "Shadows Enabled", ETwType::TW_TYPE_BOOLCPP, &ShadowsEnabled, "group=MOD:ShadowBoost");
+	g_ENB->TwAddVarRW(bar, "LOD Enabled", ETwType::TW_TYPE_BOOLCPP, &LODEnabled, "group=MOD:ShadowBoost");
+
+	g_ENB->TwAddVarRW(bar, "Target FPS", ETwType::TW_TYPE_FLOAT, &TargetFPS, "group=MOD:ShadowBoost");
+
 	g_ENB->TwAddVarRW(bar, "Distance Change Speed", ETwType::TW_TYPE_FLOAT, &RateOfChange, "group=MOD:ShadowBoost  min=0.00 max=1000.0");
-	g_ENB->TwAddVarCB(bar, "Maximum Distance", ETwType::TW_TYPE_FLOAT, UISetMaxShadowDistance, UIGetMaxShadowDistance, this, "group=MOD:ShadowBoost min=1.00 max=1000000.0");
-	g_ENB->TwAddVarCB(bar, "Minimum Distance", ETwType::TW_TYPE_FLOAT, UISetMinShadowDistance, UIGetMinShadowDistance, this, "group=MOD:ShadowBoost min=1.00 max=1000000.0");
-	g_ENB->TwAddVarRW(bar, "Current Distance", ETwType::TW_TYPE_FLOAT, &gShadowDistance, "group=MOD:ShadowBoost readonly=true");
+
+	UI_ADD_MINMAXDISTANCE(fShadowDistanceMax, fShadowDistanceMin)
+	UI_ADD_MINMAXDISTANCE(fLODFadeOutMultObjectsMax, fLODFadeOutMultObjectsMin)
+	UI_ADD_MINMAXDISTANCE(fLODFadeOutMultItemsMax, fLODFadeOutMultItemsMin)
+	UI_ADD_MINMAXDISTANCE(fLODFadeOutMultActorsMax, fLODFadeOutMultActorsMin)
+
+	UI_ADD_CURRENTDISTANCE(fShadowDistance)
+	UI_ADD_CURRENTDISTANCE(fLODFadeOutMultObjects)
+	UI_ADD_CURRENTDISTANCE(fLODFadeOutMultItems)
+	UI_ADD_CURRENTDISTANCE(fLODFadeOutMultActors)
+
 	g_ENB->TwAddVarRW(bar, "Last CPU Frametime", ETwType::TW_TYPE_FLOAT, &lastCPUFrameTime, "group=MOD:ShadowBoost readonly=true");
 }
+
+#undef UI_ADD_MINMAXDISTANCE
+#undef UI_ADD_CURRENTDISTANCE
