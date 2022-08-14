@@ -60,7 +60,7 @@ void ShadowBoost::Start()
 
 void ShadowBoost::UpdateShadows(float a_avgTiming)
 {
-	float timeRatio = a_avgTiming / (1 / TargetFPS);
+	float timeRatio = a_avgTiming / (1 / (TargetFPS + 3));
 	float scaleRatio = (RateOfChange / 100) * (1.0f - timeRatio) + 1.0f;
 
 	if (ShadowsEnabled)
