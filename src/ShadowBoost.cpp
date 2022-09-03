@@ -76,7 +76,7 @@ void ShadowBoost::UpdateShadows(float a_avgTiming)
 	} else {
 		fLODFadeOutMultObjects = fLODFadeOutMultObjectsMax;
 		fLODFadeOutMultItems = fLODFadeOutMultItemsMax;
-		fLODFadeOutMultActors = fLODFadeOutMultItemsMin;
+		fLODFadeOutMultActors = fLODFadeOutMultActorsMin;
 	}
 }
 
@@ -96,27 +96,6 @@ void ShadowBoost::Update()
 	frameEnd = PerformanceCounter();
 }
 
-// bool ShadowBoost::HaveUpdatedAveragedTiming(float a_frametime, float& a_avgTiming)
-// {
-// 	frameCounter++;
-// 	bool badframe = frameCounter >= CPUTimingKeepNumFrames;
-// 	if (badframe) {
-// 		for (int i = CPUTimingKeepNumFrames - 1; i > 0; i--) {
-// 			timingPerFrame[i] = timingPerFrame[i - 1];
-// 		}
-// 	} else {
-// 		a_avgTiming = 0.0f;
-// 		for (int i = CPUTimingKeepNumFrames - 1; i > 0; i--) {
-// 			timingPerFrame[i] = timingPerFrame[i - 1];
-// 			a_avgTiming += timingPerFrame[i];
-// 		}
-// 		a_avgTiming += a_frametime;
-// 		a_avgTiming /= CPUTimingKeepNumFrames;
-// 	}
-// 	timingPerFrame[0] = a_frametime;
-// 	return badframe;
-// }
-
 #define UI_ADD_MINMAXDISTANCE(maxparam, minparam)                                                                                                        \
 	g_ENB->TwAddVarCB(bar, #maxparam, ETwType::TW_TYPE_FLOAT, UISet##maxparam, UIGet##maxparam, this, "group=MOD:ShadowBoost min=1.00 max=1000000.0"); \
 	g_ENB->TwAddVarCB(bar, #minparam, ETwType::TW_TYPE_FLOAT, UISet##minparam, UIGet##minparam, this, "group=MOD:ShadowBoost min=1.00 max=1000000.0");
@@ -127,19 +106,17 @@ void ShadowBoost::Update()
 void ShadowBoost::UpdateUI()
 {
 	auto bar = g_ENB->TwGetBarByEnum(ENB_API::ENBWindowType::GeneralWindow);
-	g_ENB->TwAddVarRW(bar, "Shadows Enabled", ETwType::TW_TYPE_BOOLCPP, &ShadowsEnabled, "group=MOD:ShadowBoost");
-	g_ENB->TwAddVarRW(bar, "LOD Enabled", ETwType::TW_TYPE_BOOLCPP, &LODEnabled, "group=MOD:ShadowBoost");
-
 	g_ENB->TwAddVarRW(bar, "Target FPS", ETwType::TW_TYPE_FLOAT, &TargetFPS, "group=MOD:ShadowBoost");
-
 	g_ENB->TwAddVarRW(bar, "Distance Change Speed", ETwType::TW_TYPE_FLOAT, &RateOfChange, "group=MOD:ShadowBoost  min=0.00 max=1000.0");
 
+	g_ENB->TwAddVarRW(bar, "Shadows Enabled", ETwType::TW_TYPE_BOOLCPP, &ShadowsEnabled, "group=MOD:ShadowBoost");
 	UI_ADD_MINMAXDISTANCE(fShadowDistanceMax, fShadowDistanceMin)
+	UI_ADD_CURRENTDISTANCE(fShadowDistance)
+
+	g_ENB->TwAddVarRW(bar, "LOD Enabled", ETwType::TW_TYPE_BOOLCPP, &LODEnabled, "group=MOD:ShadowBoost");
 	UI_ADD_MINMAXDISTANCE(fLODFadeOutMultObjectsMax, fLODFadeOutMultObjectsMin)
 	UI_ADD_MINMAXDISTANCE(fLODFadeOutMultItemsMax, fLODFadeOutMultItemsMin)
 	UI_ADD_MINMAXDISTANCE(fLODFadeOutMultActorsMax, fLODFadeOutMultActorsMin)
-
-	UI_ADD_CURRENTDISTANCE(fShadowDistance)
 	UI_ADD_CURRENTDISTANCE(fLODFadeOutMultObjects)
 	UI_ADD_CURRENTDISTANCE(fLODFadeOutMultItems)
 	UI_ADD_CURRENTDISTANCE(fLODFadeOutMultActors)
