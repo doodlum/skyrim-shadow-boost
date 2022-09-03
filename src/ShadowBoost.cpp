@@ -82,8 +82,8 @@ void ShadowBoost::UpdateShadows(float a_avgTiming)
 
 void ShadowBoost::UpdateSettings()
 {
-	long long finish = PerformanceCounter();
-	double    elapsedMilliseconds = (double)((finish - frameEnd)) / PerformanceFrequency();
+	long long frameEnd = PerformanceCounter();
+	double    elapsedMilliseconds = (double)((frameEnd - frameStart)) / PerformanceFrequency();
 	float     frameTime = (float)elapsedMilliseconds;
 	UpdateShadows(frameTime);
 	lastCPUFrameTime = frameTime;
@@ -93,7 +93,7 @@ void ShadowBoost::Update()
 {
 	if (init)
 		UpdateSettings();
-	frameEnd = PerformanceCounter();
+	frameStart = PerformanceCounter();
 }
 
 #define UI_ADD_MINMAXDISTANCE(maxparam, minparam)                                                                                                        \
