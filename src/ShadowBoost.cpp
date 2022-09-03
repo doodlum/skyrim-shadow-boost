@@ -105,7 +105,7 @@ void ShadowBoost::Update()
 
 void ShadowBoost::UpdateUI()
 {
-	auto bar = g_ENB->TwGetBarByEnum(ENB_API::ENBWindowType::GeneralWindow);
+	auto bar = g_ENB->TwGetBarByEnum(!REL::Module::IsVR() ? ENB_API::ENBWindowType::EditorBarEffects : ENB_API::ENBWindowType::EditorBarObjects); // ENB misnames its own bar, whoops!
 	g_ENB->TwAddVarRW(bar, "Target FPS", ETwType::TW_TYPE_FLOAT, &TargetFPS, "group=MOD:ShadowBoost");
 	g_ENB->TwAddVarRW(bar, "Distance Change Speed", ETwType::TW_TYPE_FLOAT, &RateOfChange, "group=MOD:ShadowBoost  min=0.00 max=1000.0");
 
