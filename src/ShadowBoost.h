@@ -81,7 +81,7 @@ public:
 		return li.QuadPart;
 	}
 
-	long long frameEnd = PerformanceCounter();
+	long long frameStart = PerformanceCounter();
 
 	static void UpdateShadowDistanceAndInteriorFlag(bool a_isInterior)
 	{
@@ -129,33 +129,30 @@ public:
 protected:
 	struct Hooks
 	{
-		struct TimeManager_SleepCheck
+		struct Main_Update_Start
 		{
-			static INT64 thunk(int a1)
+			static void thunk(INT64 a_unk)
 			{
-				INT64 ret = func(a1);
-				GetSingleton()->Update();
-				GetSingleton()->frameEnd = PerformanceCounter();
-				return ret;
+				GetSingleton()->frameStart = PerformanceCounter();
+				func(a_unk);
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
-		struct TimeManager_Sleep
+		struct Main_Update_Render
 		{
-			static LARGE_INTEGER thunk()
+			static void thunk(RE::Main* a_main)
 			{
-				GetSingleton()->frameEnd = PerformanceCounter();
-				return func();
+				func(a_main);
+				GetSingleton()->Update();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
 		static void Install()
-		{
-			stl::write_thunk_call<TimeManager_SleepCheck>(RELOCATION_ID(75461, 77246).address() + REL::Relocate(0x9, 0x9, 0x15));
-			if (!REL::Module::IsVR()) // VR does not appear to have SleepIfFasterThan60FPS_140D73DB0
-				stl::write_thunk_call<TimeManager_Sleep>(RELOCATION_ID(75461, 77246).address() + REL::Relocate(0x44, 0xAF));
+		{		
+			stl::write_thunk_call<Main_Update_Start>(REL::RelocationID(35565, 36564).address() + REL::Relocate(0x1E, 0x3E, 0x33));
+			stl::write_thunk_call<Main_Update_Render>(REL::RelocationID(35565, 36564).address() + REL::Relocate(0x5D2, 0xA92, 0x678));
 		}
 	};
 
