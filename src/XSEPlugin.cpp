@@ -16,7 +16,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 				case ENBCallbackType::ENBCallback_PreSave:
 					ShadowBoost::GetSingleton()->SaveJSON();
 					break;
-				default:
+				case ENBCallbackType::ENBCallback_PostReset:
 					ShadowBoost::GetSingleton()->UpdateUI();
 					break;
 				}
