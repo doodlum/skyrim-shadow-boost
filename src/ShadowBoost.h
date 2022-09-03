@@ -96,7 +96,7 @@ public:
 	static void UpdateShadowDistanceAndInteriorFlag(bool a_isInterior)
 	{
 		using func_t = decltype(&UpdateShadowDistanceAndInteriorFlag);
-		REL::Relocation<func_t> func{ REL::RelocationID(98978, 105631) };
+		REL::Relocation<func_t> func{ RELOCATION_ID(98978, 105631) };
 		func(a_isInterior);
 	}
 
@@ -163,8 +163,9 @@ protected:
 
 		static void Install()
 		{
-			stl::write_thunk_call<TimeManager_SleepCheck>(REL::RelocationID(75461, 77246).address() + REL::Relocate(0x9, 0x9));
-			stl::write_thunk_call<TimeManager_Sleep>(REL::RelocationID(75461, 77246).address() + REL::Relocate(0x44, 0xAF));
+			stl::write_thunk_call<TimeManager_SleepCheck>(RELOCATION_ID(75461, 77246).address() + REL::Relocate(0x9, 0x9, 0x15));
+			if (!REL::Module::IsVR()) // VR does not appear to have SleepIfFasterThan60FPS_140D73DB0
+				stl::write_thunk_call<TimeManager_Sleep>(RELOCATION_ID(75461, 77246).address() + REL::Relocate(0x44, 0xAF));
 		}
 	};
 
