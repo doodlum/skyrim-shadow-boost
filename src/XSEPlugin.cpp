@@ -12,6 +12,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 				switch (calltype) {
 				case ENBCallbackType::ENBCallback_PostLoad:
 					ShadowBoost::GetSingleton()->LoadJSON();
+					ShadowBoost::GetSingleton()->UpdateUI();
 					break;
 				case ENBCallbackType::ENBCallback_PreSave:
 					ShadowBoost::GetSingleton()->SaveJSON();
