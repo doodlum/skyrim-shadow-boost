@@ -29,7 +29,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 
 	case SKSE::MessagingInterface::kDataLoaded:
 		ShadowBoost::GetSingleton()->Start();
-		if (!GetModuleHandle(L"Data\\SKSE\\Plugins\\SSEDisplayTweaks.dll")) {
+		if (!REL::Module::IsVR() && !GetModuleHandle(L"Data\\SKSE\\Plugins\\SSEDisplayTweaks.dll")) {
 			RE::DebugMessageBox("Warning: ShadowBoost requires SSE Display Tweaks");
 		}
 		break;
