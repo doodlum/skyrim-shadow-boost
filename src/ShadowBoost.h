@@ -1,15 +1,7 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
-#include "API/ENBSeriesAPI.h"
+#include "ENB/ENBSeriesAPI.h"
 #include <shared_mutex>
-
-static float& fShadowDistance = (*(float*)RELOCATION_ID(513793, 391845).address());
-static float& fLODFadeOutMultObjects = (*(float*)RELOCATION_ID(500935, 358960).address());
-static float& fLODFadeOutMultItems = (*(float*)RELOCATION_ID(500933, 358957).address());
-static float& fLODFadeOutMultActors = (*(float*)RELOCATION_ID(500931, 358954).address());
 
 class ShadowBoost
 {
@@ -26,7 +18,7 @@ public:
 	}
 
 	ENB_API::ENBSDKALT1001* g_ENB = nullptr;
-	json                    JSONSettings;
+	std::shared_mutex       fileLock;
 
 	// GameSettings
 
@@ -34,14 +26,19 @@ public:
 
 	// Settings
 
-	bool ShadowsEnabled;
-	bool LODEnabled;
+	float fTargetFPS;
+	float fRateOfChange;
 
-	float TargetFPS;
-	float RateOfChange;
+	// Shadows
+
+	bool bShadowsEnabled;
 
 	float fShadowDistanceMax;
 	float fShadowDistanceMin;
+
+	// LOD
+
+	bool bLODEnabled;
 
 	float fLODFadeOutMultObjectsMax;
 	float fLODFadeOutMultObjectsMin;
@@ -52,13 +49,26 @@ public:
 	float fLODFadeOutMultActorsMax;
 	float fLODFadeOutMultActorsMin;
 
+	// Terrain
+
+	bool bTerrainEnabled;
+
+	float fBlockLevel0DistanceMax;
+	float fBlockLevel0DistanceMin;
+
+	float fBlockLevel1DistanceMax;
+	float fBlockLevel1DistanceMin;
+
+	float fTreeLoadDistanceMax;
+	float fTreeLoadDistanceMin;
+
 	// Variables
 
-	bool init = false;
+	bool  init = false;
 	float lastCPUFrameTime;
 
-	void LoadJSON();
-	void SaveJSON();
+	void LoadINI();
+	void SaveINI();
 	void Start();
 
 	void UpdateShadows(float a_avgTiming);
@@ -98,33 +108,37 @@ public:
 
 	// ENB UI
 
-#define UI_SETTER_GETTER_DISTANCE(maxparam, minparam)                                                \
-	static void UISet##maxparam(const void* value, [[maybe_unused]] void* clientData)                \
+#define UI_SETTER_GETTER_DISTANCE(param)                                                \
+	static void UISet##param##Max(const void* value, [[maybe_unused]] void* clientData)                \
 	{                                                                                                \
-		GetSingleton()->maxparam = max(GetSingleton()->minparam, *static_cast<const float*>(value)); \
+		GetSingleton()->param##Max = max(GetSingleton()->param##Min, *static_cast<const float*>(value)); \
 	};                                                                                               \
-	static void UIGet##maxparam(void* value, [[maybe_unused]] void* clientData)                      \
+	static void UIGet##param##Max(void* value, [[maybe_unused]] void* clientData)                      \
 	{                                                                                                \
-		*static_cast<float*>(value) = GetSingleton()->maxparam;                                      \
+		*static_cast<float*>(value) = GetSingleton()->param##Max;                                      \
 	}                                                                                                \
-	static void UISet##minparam(const void* value, [[maybe_unused]] void* clientData)                \
+	static void UISet##param##Min(const void* value, [[maybe_unused]] void* clientData)                \
 	{                                                                                                \
-		GetSingleton()->minparam = min(GetSingleton()->maxparam, *static_cast<const float*>(value)); \
+		GetSingleton()->param##Min = min(GetSingleton()->param##Max, *static_cast<const float*>(value)); \
 	}                                                                                                \
-	static void UIGet##minparam(void* value, [[maybe_unused]] void* clientData)                      \
+	static void UIGet##param##Min(void* value, [[maybe_unused]] void* clientData)                      \
 	{                                                                                                \
-		*static_cast<float*>(value) = GetSingleton()->minparam;                                      \
+		*static_cast<float*>(value) = GetSingleton()->param##Min;                                      \
 	}
 
-	UI_SETTER_GETTER_DISTANCE(fShadowDistanceMax, fShadowDistanceMin)
+	UI_SETTER_GETTER_DISTANCE(fShadowDistance)
 
-	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultObjectsMax, fLODFadeOutMultObjectsMin)
-	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultItemsMax, fLODFadeOutMultItemsMin)
-	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultActorsMax, fLODFadeOutMultActorsMin)
+	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultObjects)
+	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultItems)
+	UI_SETTER_GETTER_DISTANCE(fLODFadeOutMultActors)
+
+	UI_SETTER_GETTER_DISTANCE(fBlockLevel0Distance)
+	UI_SETTER_GETTER_DISTANCE(fBlockLevel1Distance)
+	UI_SETTER_GETTER_DISTANCE(fTreeLoadDistance)
 
 #undef UI_SETTER_GETTER_DISTANCE
 
-	void UpdateUI();
+	void RefreshUI();
 
 protected:
 	struct Hooks
@@ -143,23 +157,23 @@ protected:
 		{
 			static void thunk(RE::Main* a_main)
 			{
-				func(a_main);
 				GetSingleton()->Update();
+				func(a_main);
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
 		static void Install()
-		{		
+		{
 			stl::write_thunk_call<Main_Update_Start>(REL::RelocationID(35565, 36564).address() + REL::Relocate(0x1E, 0x3E, 0x33));
-			stl::write_thunk_call<Main_Update_Render>(REL::RelocationID(35565, 36564).address() + REL::Relocate(0x5D2, 0xA92, 0x678));
+		//	stl::write_thunk_call<Main_Update_Render>(REL::RelocationID(35565, 36564).address() + REL::Relocate(0x5D2, 0xA92, 0x678));
 		}
 	};
 
 private:
 	ShadowBoost()
 	{
-		LoadJSON();
+		LoadINI();
 	};
 
 	ShadowBoost(const ShadowBoost&) = delete;
