@@ -22,8 +22,8 @@ struct Hooks
 			logger::info("Calling original Init3D");
 			func();
 			logger::info("Accessing render device information");
-			auto manager = RE::BSRenderManager::GetSingleton();
-			*(uintptr_t*)&ptrPresent = Detours::X64::DetourClassVTable(*(uintptr_t*)manager->GetRuntimeData().swapChain, &hk_IDXGISwapChain_Present, 8);
+			auto swapChain = reinterpret_cast<IDXGISwapChain*>(RE::BSGraphics::Renderer::GetCurrentRenderWindow()->swapChain);
+			*(uintptr_t*)&ptrPresent = Detours::X64::DetourClassVTable(*(uintptr_t*)swapChain, &hk_IDXGISwapChain_Present, 8);
 
 			logger::info("Detouring virtual function tables");
 		}
